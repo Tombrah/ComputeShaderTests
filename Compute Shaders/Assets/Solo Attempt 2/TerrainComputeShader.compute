@@ -1,0 +1,38 @@
+#pragma kernel SetTerrain
+
+RWStructuredBuffer<float3> Positions;
+
+uint Resolution;
+
+float Time, Step;
+
+float2 GetUV(uint3 Id)
+{
+    return (Id.xy + 0.5) * Step - 1.0;
+}
+
+float nrand(float2 uv)
+{
+    return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453123);
+}
+
+void SetPosition(uint3 Id, float3 position)
+{
+    if (Id.x <= Resolution && Id.y <= Resolution)
+    {
+        Positions[Id.x + Id.y * Resolution] = position;
+    }
+}
+
+float3 GetNewPosition(uint3 Id, float randY)
+{
+    float3 position = Positions[Id.x + Id.y * Resolution];
+    float yInRange = randY * 4 - 2;
+    return float3(position.x, yInRange, position.z);
+}
+
+[numthreads(32,32,1)]
+void SetTerrain (uint3 id : SV_DispatchThreadID)
+{
+    SetPosition(id, GetNewPosition(id, nrand(GetUV(id))));
+}
